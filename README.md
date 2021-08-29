@@ -1,5 +1,13 @@
 # washin
 
+### si falla el npm install
+```
+sudo rm -rf package-lock.json node_modules
+sudo npm cache clean --force
+sudo npm i --unsafe-perm node-sass
+
+```
+
 ## Project setup
 ```
 npm install
@@ -25,7 +33,4 @@ npm run test
 npm run lint
 ```
 
-### si falla el npm install
-sudo rm -rf package-lock.json node_modules
-sudo npm cache clean --force
-sudo npm i --unsafe-perm node-sass
+
