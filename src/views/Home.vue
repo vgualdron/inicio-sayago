@@ -52,36 +52,97 @@
 export default {
   data () {
     return {
-			aplicaciones: []
+		aplicaciones: [],
+		audio: 'https://soundbible.com/mp3/analog-watch-alarm_daniel-simion.mp3',
     }
 	},
   methods: {
     listarAplicaciones: function () {
-			
-			var self = this
-			let token_json = window.localStorage.getItem('token')
-			let frm = {
-				token: token_json
-			}
-      this.$http.post('ws/aplicacion/listar_por_usuario.php', frm).then(resp => {
-				let respuesta = resp.data
-				this.aplicaciones = resp.data.aplicaciones
+		var self = this
+		let token_json = window.localStorage.getItem('token')
+		let frm = {
+			token: token_json
+		}
+      	this.$http.post('ws/aplicacion/listar_por_usuario.php', frm).then(resp => {
+			let respuesta = resp.data
+			this.aplicaciones = respuesta.aplicaciones
+			this.$loader.close()
+      	}).catch(err => {
+			if (err) {
+				console.log(err)
+				this.$toast.error('error' + err)
 				this.$loader.close()
-      }).catch(err => {
-        if (err) {
-          console.log(err)
-					this.$toast.error('error' + err)
-					this.$loader.close()
-        }
+			}
       })
-    }
+    },
+	async getResolution(prefix, type) {
+		let token_json = window.localStorage.getItem('token')
+		let frm = {
+			token: token_json
+		}
+		const self = this;
+      	await this.$http.get(`../mesero/ws/resolution/index.php?prefix=${prefix}&type=${type}`, frm).then(resp => {
+			const resolution = resp.data;
+			self.validateResolution(resolution.data, type);
+		}).catch(err => {
+			if (err) {
+				console.log(err)
+				this.$toast.error('error' + err)
+				this.$loader.close()
+			}
+		})
+    },
+	validateResolution(resolution, type) {
+		const { maxInvoiceNumber, nextInvoiceNumber, endDate } = resolution;
+		let message = `Pronto se vence tu resolución de facturación ${type == 'FE' ? 'electrónica' : 'POS'}.`;
+		const remainingAmountAllowed = 5;
+		const remainingDaysAllowed = 5;
+		const currentRemainingAmount = parseInt(maxInvoiceNumber) - parseInt(nextInvoiceNumber); 
+
+		const currentDate = new Date().getTime();
+		const finishDate = new Date(endDate).getTime();
+		const diff = finishDate - currentDate;
+		const currentRemainingDays = diff/(1000*60*60*24);
+
+		let flag = false;
+
+		if (currentRemainingAmount <= remainingAmountAllowed) {
+			flag = true;
+			message += ` Te quedan ${currentRemainingAmount} `;
+			message += ` Facturas ${type == 'FE' ? 'electrónica' : 'POS'}, por favor actualiza la resolución `;
+			message += ` lo más pronto posible. Es urgente !!! `;
+		}
+
+		if (currentRemainingDays <= remainingDaysAllowed) {
+			flag = true;
+			message += ` Te quedan ${parseInt(currentRemainingDays)} `;
+			message += ` Dias, por favor actualiza la resolución `;
+			message += ` lo más pronto posible. Es urgente !!! `;
+		}
+
+		if (flag) {
+			const audio = new Audio(this.audio);
+			audio.play();
+
+			this.$alertify.confirmWithTitle(
+				"ALERTA !!!",
+				message,
+				function() {
+					audio.pause();
+				},
+				function() {
+					audio.pause();
+				}
+			).set("labels", { ok: "Aceptar", cancel: "Cancelar" });
+		}
+	},
   },
   created: function () {
-	},
-	mounted: function () {
-		this.listarAplicaciones()
-		this.$loader.close()
-		this.$loader.open({message: 'Cargando modulos ...'})
+  },
+  async mounted() {
+	this.listarAplicaciones();
+	await this.getResolution('PS', 'POS');
+	setTimeout(() => this.getResolution('FES', 'FE'), 20000);
   }
 }
 </script>

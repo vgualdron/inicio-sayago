@@ -14,6 +14,7 @@ import GCalendario from './gnosoft/components/GCalendario'
 import VueSignaturePad from 'vue-signature-pad'
 // import Upload from './gnosoft/components/UploadFileFull'
 import 'vue-form-wizard/dist/vue-form-wizard.min.css'
+import VueAlertify from 'vue-alertify';
 
 Vue.config.productionTip = false
 Vue.use(Vuex)
@@ -24,6 +25,7 @@ Vue.use(GConfig, router)
 Vue.use(Vuelidate)
 Vue.use(GEvents)
 Vue.use(VueSignaturePad)
+Vue.use(VueAlertify)
 Vue.component('g-calendario', GCalendario)
 new Vue({
   router,
